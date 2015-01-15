@@ -1,6 +1,6 @@
 bugzilla.mozilla.org administration scripts
 
 a collection of unofficial hacks to help bugzilla administration.
-these are nasty, unofficial, and sometimes wrong ways to do things.
+these are nasty, unofficial, and sometimes do things the wrong way.
 
-these are provided without any support.
+these are provided as-is without any support.
