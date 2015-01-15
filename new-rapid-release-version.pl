@@ -43,6 +43,7 @@ use constant VERSIONS => (
     'Firefox for Metro',
     'Firefox Health Report',
     'MailNews Core',
+    'Tech Evangelism',
     'Testing',
     'Thunderbird',
     'Toolkit',
