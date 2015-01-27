@@ -25,21 +25,23 @@ use autodie;
 use lib '/opt/bz';
 use Bz;
 use DateTime;
+use IPC::System::Simple qw(runx capture);
 
 chdir('/opt/bugzilla/repo/bmo/master');
 info("updating repo");
-system 'git pull';
+runx(qw(git pull));
 
 my $production_rev = shift;
 if (!$production_rev) {
-    system 'git checkout production';
-    $production_rev = `git log -1 --pretty=format:%H`;
-    system 'git checkout master';
+    runx(qw(git checkout production));
+    runx(qw(git pull));
+    $production_rev = capture(qw(git log -1 --pretty=format:%H));
+    runx(qw(git checkout master));
 }
-my $master_rev = `git log -1 --pretty=format:%H`;
+my $master_rev = capture(qw(git log -1 --pretty=format:%H));
 print "$production_rev -> $master_rev\n";
 
-my @log = `git log --oneline $production_rev..$master_rev`;
+my @log = capture(qw(git log --oneline), "$production_rev..$master_rev");
 die "nothing to commit\n" unless @log;
 chomp(@log);
 
