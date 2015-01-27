@@ -80,7 +80,7 @@ foreach my $line (@log) {
             alert("skipping bug $bug_id " . $bug->{summary} . " RESOLVED/" . $bug->{resolution});
             next;
         }
-        if ($bug->{summary} =~ /\bbackport\s+(?:upstream\s+)?bug\s+(\d+)/) {
+        if ($bug->{summary} =~ /\bbackport\s+(?:upstream\s+)?bug\s+(\d+)/i) {
             my $upstream = $1;
             info("loading upstream bug $upstream");
             $bug->{summary} = Bz->bugzilla->bug($upstream)->{summary};
