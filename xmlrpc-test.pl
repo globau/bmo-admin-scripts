@@ -5,36 +5,47 @@
 
 use strict;
 use warnings;
+use 5.10.1;
 
 use Cwd qw(abs_path);
-use FindBin qw($RealBin);
 use File::Basename;
+use FindBin qw($RealBin);
+use Getopt::Lucid qw(:all);
 use HTTP::Cookies;
 use SOAP::Lite;
+use Sys::Hostname qw(hostname);
 use XMLRPC::Lite;
 
 use Data::Dumper;
 $Data::Dumper::Terse = 1;
 $Data::Dumper::Sortkeys = 1;
 
-use constant USERNAME   => 'glob@example.com';
-use constant PASSWORD   => 'secret';
-use constant URL        => 'http://bz/%s/xmlrpc.cgi';
-use constant PRETTY_XML => 0;
-my $rpc = {};
+my $opt = Getopt::Lucid->getopt([
+    Param('username|user|u')->default('glob@example.com'),
+    Param('password|pass|p')->default('secret'),
+    Param('api_key|key|k'),
+    Param('token|t'),
+    Param('url')->default('http://' . hostname() . '/%s/xmlrpc.cgi'),
+    Switch('pretty_xml|pretty-xml|x'),
+])->validate;
 
-my ($result, $id);
+if ($opt->get_api_key) {
+    bugzilla('api_key', $opt->get_api_key);
+} elsif ($opt->get_token) {
+    bugzilla('token', $opt->get_api_key);
+} else {
+    bugzilla(
+        'User.login', {
+            login    => $opt->get_username,
+            password => $opt->get_password,
+            remember => 1,
+        }
+    );
+}
 
-$result = bugzilla(
-    'User.login', {
-        login    => USERNAME,
-        password => PASSWORD,
-        remember => 1,
-    });
-
-$result = bugzilla(
+bugzilla(
     'Bug.get', {
-        ids => [ 35 ],
+        ids => [ 999 ],
     }
 );
 
@@ -45,7 +56,7 @@ $result = bugzilla(
 sub _debug_transport {
     my $r = shift;
     (my $content = $r->as_string) =~ s/\n*$/\n/;
-    if (PRETTY_XML) {
+    if ($opt->get_pretty_xml) {
         my ($header, $body) = $content =~ /^(.+\n\n)(.+)$/s;
         eval {
             eval 'use XML::LibXML';
@@ -53,9 +64,9 @@ sub _debug_transport {
         };
     }
     if ($r->isa('HTTP::Request')) {
-        print">>>\n$content>>>\n";
+        print ">>>\n$content>>>\n";
     } elsif ($r->isa('HTTP::Response')) {
-        print"<<<\n$content<<<\n";
+        print "<<<\n$content<<<\n";
     } else {
         die;
     }
@@ -63,28 +74,33 @@ sub _debug_transport {
 }
 
 sub bugzilla {
-    my ($method, $params) = @_;
-    my $soapresult;
+    my ($method, $params, $token) = @_;
+    state $rpc;
+    my @auth_fields = qw(api_key token);
+
+    if (grep { $_ eq $method } @auth_fields) {
+        $rpc->{$method} = $params;
+        return;
+    }
 
     $rpc->{cookie_jar} //= HTTP::Cookies->new( ignore_discard => 1 );
     if (!$rpc->{proxy}) {
-        my $path = $RealBin;
-        while ($path ne '' && !-e "$path/localconfig") {
-            print "($path)\n";
-            $path = abs_path("$path/..");
-        }
-        $path ||= 'unknown';
+        my $dir = _find_base_directory('.')
+            or _find_base_directory($RealBin)
+            or die "failed to find working environment\n";
         $rpc->{proxy} = XMLRPC::Lite->proxy(
-            sprintf(URL, basename($path)),
+            sprintf($opt->get_url, $dir),
             cookie_jar => $rpc->{cookie_jar},
         );
         foreach my $handler (qw( request_send response_done )) {
             $rpc->{proxy}->transport->set_my_handler( $handler => \&_debug_transport );
         }
     }
-    $params->{token} = $rpc->{token}
-        if $rpc->{token};
+    foreach my $field (@auth_fields) {
+        $params->{$field} = $rpc->{$field} if $rpc->{$field};
+    }
 
+    my $soapresult;
     eval {
         $soapresult = $rpc->{proxy}->call($method, $params);
         if ($soapresult->fault) {
@@ -100,4 +116,14 @@ sub bugzilla {
     $rpc->{token} = $soapresult->result->{token}
         if $method eq 'User.login';
     return $soapresult->result;
+}
+
+sub _find_base_directory {
+    my ($path) = @_;
+    $path = abs_path($path);
+    while (1) {
+        return '' if $path eq '' || $path eq '/';
+        return basename($path) if -e "$path/localconfig";
+        $path = abs_path("$path/..");
+    }
 }
