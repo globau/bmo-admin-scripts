@@ -150,6 +150,9 @@ foreach my $revision (@revisions) {
 }
 print "\n\n";
 
+# reminder to merge master -> production
+info("before filing the bug, merge master->production branches");
+
 sub html_escape {
     my ($s) = @_;
     $s =~ s/&/&amp;/g;
