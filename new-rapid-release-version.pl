@@ -15,7 +15,6 @@ $Data::Dumper::Terse = 1;
 $Data::Dumper::Sortkeys = 1;
 
 use constant URL_BASE   => 'https://bugzilla.mozilla.org/';
-use constant USERNAME   => 'glob@mozilla.com';
 
 use constant MILESTONES => (
     'Add-on SDK',
@@ -55,7 +54,7 @@ use constant VERSIONS => (
 #
 
 my $train = shift
-    or die "syntax: $0 (version)\neg. $0 24\n";
+    or die "syntax: $0 (version) [username] [password]\neg. $0 24\n";
 $train =~ /\D/
     and die "invalid version '$train'\n";
 
@@ -65,20 +64,24 @@ About to add milestones and versions for version '$train'.
   Versions  : $train
 Press <return> to continue, or ctrl+c to cancel
 EOF
-<>;
+<STDIN>;
 
 #
 # login
 #
 
-printf "password for %s: ", USERNAME;
-my $password = <>;
-chomp($password);
+my $username = shift || 'glob@mozilla.com';
+my $password = shift;
+if (!$password) {
+    printf "password for %s: ", $username;
+    $password = <>;
+    chomp($password);
+}
 
 print "Logging in to " . URL_BASE . "..\n";
 rpc(
     'User.login', {
-        login       => USERNAME,
+        login       => $username,
         password    => $password,
         remember    => 1,
     });
