@@ -40,32 +40,32 @@ if (!@list) {
     chomp(@list);
 }
 
+my @tests = (
+    '<([^>]+)>',
+    '\(([^\)]+)\)',
+    '\[([^\]]+)\]',
+    '\b(\S+\@.+\..+)$',
+);
+
 my @logins;
 foreach (@list) {
     s/(^\s+|\s+$)//g;
     next if $_ eq '';
-    my $login;
+    next unless /\@/;
 
-    if (!/\@/) {
-        print "skipping: $_\n";
-        next;
-    } elsif (/<([^>]+)>/ && $1 =~ /^(.+\@.+\..+)$/) {
-        $login = $1;
-    } elsif (/\s(\S+\@.+\..+)$/) {
-        $login = $1;
-        $login =~ s/(^[\(<\[]|[\)>\]]$)//g;
-    } elsif (/^.*\(([^\)]+)\)/) {
-        $login = $1;
-    } elsif (/^([^\@]+\@.+\..+)$/) {
-        $login = $1;
-    } else {
-        print "skipping: $_\n";
-        next;
+    TEST: foreach my $test (@tests) {
+        while ($_ =~ /$test/g) {
+            my $login = $1;
+            $login =~ s/^(\S+)\s.*/$1/;
+            $login =~ s/^mailto://i;
+            $login =~ s/^[,\.\(\[\<]+//;
+            $login =~ s/[,\.\)\]\>]+$//;
+            next if $login !~ /^\S+\@\S+/ || $login =~ /\s/;
+            push @logins, $login;
+            print "<$login>\n";
+            last TEST;
+        }
     }
-    $login =~ s/^(\S+)\s.*/$1/;
-    $login =~ s/^mailto://i;
-    $login =~ s/[,\.\)\]\>]+$//;
-    push @logins, $login;
 }
 @logins = uniq sort @logins;
 
