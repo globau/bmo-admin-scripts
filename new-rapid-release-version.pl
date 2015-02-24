@@ -26,6 +26,7 @@ use constant MILESTONES => (
     'Firefox Health Report',
     'Loop',
     'MailNews Core',
+    'Mozilla QA',
     'Mozilla Localizations',
     'Mozilla Services',
     'Other Applications',
