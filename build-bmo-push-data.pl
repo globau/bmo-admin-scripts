@@ -103,7 +103,6 @@ my $last_revision  = $revisions[$#revisions]->{hash};
 
 print "\n";
 print "https://bugzilla.mozilla.org/enter_bug.cgi?product=bugzilla.mozilla.org&component=Infrastructure&short_desc=push+updated+bugzilla.mozilla.org+live\n";
-print "can we please get a bmo production push.\n";
 print "revisions: $first_revision - $last_revision\n";
 foreach my $revision (@revisions) {
     print "bug $revision->{bug_id} : $revision->{summary}\n";
