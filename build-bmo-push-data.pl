@@ -21,6 +21,7 @@ use autodie;
 #    (only include changes that are relevant to all/most of the community)
 # 8. edit the RecentChanges wiki (add today's push to the top, delete the oldest)
 # 9. edit the relevant month's wiki page (add today's push to the top)
+# 10. set the bugzilla-version param to today's date (yyyy.mm.dd)
 
 use lib '/opt/bz';
 use Bz;
@@ -31,7 +32,9 @@ chdir('/opt/bugzilla/repo/bmo/master');
 info("updating repo");
 runx(qw(git pull));
 
-my $production_rev = shift;
+# override detected prod head revision as param 1
+my $production_rev;
+$production_rev = shift if $ARGV[0] !~ /.=./;
 if (!$production_rev) {
     runx(qw(git checkout production));
     runx(qw(git pull));
@@ -40,6 +43,16 @@ if (!$production_rev) {
 }
 my $master_rev = capture(qw(git log -1 --pretty=format:%H));
 print "$production_rev -> $master_rev\n";
+
+# you can also pass in rev=bug as additional params to assign bug numbers to
+# commits that don't have it in the comment message.
+# eg. c0d00a5=1118365
+#     maps commit c0d00a5 to bug 1118365
+my %rev_bug_map;
+while (my $arg = shift) {
+    next unless $arg =~ /^([^=]+)=(\d+)/;
+    $rev_bug_map{$1} = $2;
+}
 
 my @log = capture(qw(git log --oneline), "$production_rev..$master_rev");
 die "nothing to commit\n" unless @log;
@@ -57,6 +70,11 @@ foreach my $line (@log) {
     my @bug_ids;
     if ($message =~ /\bBug (\d+)/i) {
         push @bug_ids, $1;
+    }
+
+    if (exists $rev_bug_map{$revision}) {
+        info("mapping '$line' to bug $rev_bug_map{$revision}");
+        push @bug_ids, $rev_bug_map{$revision};
     }
 
     if (!@bug_ids) {
@@ -151,6 +169,7 @@ print "\n\n";
 
 # reminder to merge master -> production
 info("before filing the bug, merge master->production branches");
+info("after pushing, set the bugzilla-version to today's date (yyyy.mm.dd)");
 
 sub html_escape {
     my ($s) = @_;
