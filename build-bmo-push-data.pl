@@ -34,7 +34,7 @@ runx(qw(git pull));
 
 # override detected prod head revision as param 1
 my $production_rev;
-$production_rev = shift if $ARGV[0] !~ /.=./;
+$production_rev = shift if @ARGV && $ARGV[0] !~ /.=./;
 if (!$production_rev) {
     runx(qw(git checkout production));
     runx(qw(git pull));
