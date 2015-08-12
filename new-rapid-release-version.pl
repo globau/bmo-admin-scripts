@@ -29,6 +29,7 @@ use constant MILESTONES => (
     'Mozilla Localizations',
     'Mozilla Services',
     'Other Applications',
+    'Taskcluster',
     'Testing',
     'Thunderbird',
     'Toolkit',
