@@ -68,13 +68,11 @@ foreach my $line (@log) {
     my ($revision, $message) = ($1, $2);
 
     my @bug_ids;
-    if ($message =~ /\bBug (\d+)/i) {
-        push @bug_ids, $1;
-    }
-
     if (exists $rev_bug_map{$revision}) {
         info("mapping '$line' to bug $rev_bug_map{$revision}");
         push @bug_ids, $rev_bug_map{$revision};
+    } elsif ($message =~ /\bBug (\d+)/i) {
+        push @bug_ids, $1;
     }
 
     if (!@bug_ids) {
@@ -149,13 +147,10 @@ print "\n\n";
 
 # weekly updates wiki
 
-print "https://wiki.mozilla.org/WeeklyUpdates\n";
-print "==== bugzilla.mozilla.org ====\n";
-print "Notable changes to [https://bugzilla.mozilla.org/ bugzilla.mozilla.org] during the last week:\n";
+print "https://ateam.etherpad.mozilla.org/weekly-updates\n";
 foreach my $revision (@revisions) {
-    printf "* {{bug|%s}} %s\n", $revision->{bug_id}, $revision->{summary};
+    printf "* bug %s - %s\n", $revision->{bug_id}, $revision->{summary};
 }
-print "[[BMO/Recent_Changes|All changes]].\n";
 print "\n\n";
 
 # recent changes wiki
