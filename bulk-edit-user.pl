@@ -21,7 +21,8 @@ $| = 1;
 
 use JSON;
 use List::MoreUtils 'uniq';
-use LWP::Simple;
+use LWP::UserAgent;
+use HTTP::Request;
 use URI::Escape;
 use Sys::Hostname;
 
@@ -67,19 +68,32 @@ foreach (@list) {
         }
     }
 }
-@logins = uniq sort @logins;
+die "no logins found\n" unless @logins;
+@logins = map { lc } uniq sort @logins;
 
 print "\nchecking " . scalar(@logins) . " user" . (scalar(@logins) == 1 ? '' : 's') . "\n";
+
+my ($code, $users) = get_users(@logins);
+if ($code == 400) {
+    foreach my $login (@logins) {
+        my (undef, $user) = get_users($login);
+        next unless $user;
+        push @$users, $user->[0];
+    }
+}
+
 my @urls;
 foreach my $login (@logins) {
-    eval {
-        my $data = decode_json(get("$url_base/rest/user/" . uri_escape($login)));
-        my $id = $data->{users}->[0]->{id};
-        push @urls, "$url_base/editusers.cgi?action=edit&userid=$id";
-        print "found $login $urls[$#urls]\n";
-    };
-    if ($@) {
-        print "failed to find $login\n";
+    my $url;
+    foreach my $rh (@$users) {
+        next unless lc($rh->{name}) eq $login;
+        $url = "$url_base/editusers.cgi?action=edit&userid=" . $rh->{id};
+        last;
+    }
+    if (!$url) {
+        print "failed to find login $login\n";
+    } else {
+        push @urls, $url;
     }
 }
 exit unless @urls;
@@ -92,4 +106,25 @@ while (my $url = pop @urls) {
         system "open '$url'";
     }
     sleep(1) if @urls;
+}
+
+sub get_users {
+    my (@logins) = @_;
+    state $ua //= LWP::UserAgent->new();
+    my $request = HTTP::Request->new(GET => $url_base . '/rest/user?include_fields=id,name&names=' . join('&names=', map { uri_escape($_) } @logins));
+    my $response = $ua->request($request);
+
+    my $code = $response->code;
+    my $users;
+
+    my $data;
+    eval {
+        $data = decode_json($response->decoded_content);
+    };
+    die "malform response ($@):\n" . $response->message . "\n" if $@;
+
+    if ($code == 200) {
+        $users = $data->{users};
+    }
+    return ($code, $users);
 }
