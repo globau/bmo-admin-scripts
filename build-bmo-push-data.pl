@@ -147,7 +147,7 @@ print "\n\n";
 
 # weekly updates wiki
 
-print "https://ateam.etherpad.mozilla.org/weekly-updates\n";
+print "https://docs.google.com/document/d/1iWAybhvGqeq9JimW5Mb_k9OIkVUBCEXhHK5g6LGczMo/edit\n";
 foreach my $revision (@revisions) {
     printf "* bug %s - %s\n", $revision->{bug_id}, $revision->{summary};
 }
