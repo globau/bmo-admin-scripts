@@ -19,10 +19,12 @@ use constant URL_BASE   => 'https://bugzilla.mozilla.org/';
 use constant MILESTONES => (
     'Add-on SDK',
     'Android Background Services',
+    'Chat Core',
     'Core',
     'Firefox',
     'Firefox for Android',
     'Firefox Health Report',
+    'Instantbird',
     'Loop',
     'MailNews Core',
     'Mozilla QA',
@@ -37,10 +39,12 @@ use constant MILESTONES => (
 
 use constant VERSIONS => (
     'Android Background Services',
+    'Chat Core',
     'Core',
     'Firefox',
     'Firefox for Android',
     'Firefox Health Report',
+    'Instantbird',
     'MailNews Core',
     'Mozilla QA',
     'Tech Evangelism',
