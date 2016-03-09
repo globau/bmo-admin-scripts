@@ -32,7 +32,7 @@ my $opt = Getopt::Lucid->getopt([
 if ($opt->get_api_key) {
     bugzilla('api_key', $opt->get_api_key);
 } elsif ($opt->get_token) {
-    bugzilla('token', $opt->get_api_key);
+    bugzilla('token', $opt->get_token);
 } else {
     bugzilla(
         'User.login', {
